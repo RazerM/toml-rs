@@ -108,7 +108,7 @@ pub fn to_string<T: ?Sized>(value: &T) -> Result<String, Error>
 /// extern crate serde_derive;
 /// extern crate toml;
 ///
-/// use std::fs::File;
+/// use std::io;
 ///
 /// #[derive(Serialize)]
 /// struct Config {
@@ -123,9 +123,7 @@ pub fn to_string<T: ?Sized>(value: &T) -> Result<String, Error>
 ///     enabled: bool,
 /// }
 ///
-/// fn main() {
-/// # }
-/// # fn fake_main() {
+/// fn main() -> Result<(), io::Error> {
 ///     let config = Config {
 ///         database: Database {
 ///             ip: "192.168.1.1".to_string(),
@@ -135,18 +133,32 @@ pub fn to_string<T: ?Sized>(value: &T) -> Result<String, Error>
 ///         },
 ///     };
 ///
-///     let mut file = File::create("config.toml").unwrap();
-///     toml::to_writer(&mut file, &config).unwrap();
+///     let mut writer = io::Cursor::new(Vec::default());
+///     toml::to_writer(&mut writer, &config)?;
+///
+///     assert_eq!(
+///     std::str::from_utf8(&writer.into_inner()).unwrap(),
+///     r#"[database]
+///ip = "192.168.1.1"
+///port = [8001, 8002, 8003]
+///connection_max = 5000
+///enabled = false
+///"#
+///    );
+///
+///    Ok(())
 /// }
 /// ```
-pub fn to_writer<W, T: ?Sized>(writer: &mut W, value: &T) -> Result<(), Error>
+pub fn to_writer<W, T: ?Sized>(writer: &mut W, value: &T) -> Result<(), io::Error>
 where
     W: io::Write,
     T: ser::Serialize,
 {
-    let b = to_vec(value)?;
-    writer.write_all(&b).unwrap();
-    Ok(())
+    let b = match to_vec(value) {
+        Ok(b) => Ok(b),
+        Err(e) => Err(io::Error::new(io::ErrorKind::InvalidData, e.to_string())),
+    }?;
+    writer.write_all(&b)
 }
 
 /// Serialize the given data structure as a "pretty" String of TOML.
