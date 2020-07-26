@@ -156,7 +156,7 @@ where
 {
     let b = match to_vec(value) {
         Ok(b) => Ok(b),
-        Err(e) => Err(io::Error::new(io::ErrorKind::InvalidData, e.to_string())),
+        Err(e) => Err(io::Error::new(io::ErrorKind::InvalidData, e)),
     }?;
     writer.write_all(&b)
 }
