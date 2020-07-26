@@ -7,6 +7,8 @@ extern crate toml;
 #[macro_use]
 extern crate serde_derive;
 
+use std::io;
+
 /// This is what we're going to decode into. Each field is optional, meaning
 /// that it doesn't have to be present in TOML.
 #[derive(Debug, Deserialize)]
@@ -33,7 +35,7 @@ struct PeerConfig {
     port: Option<u64>,
 }
 
-fn main() {
+fn main() -> Result<(), io::Error> {
     let toml_str = r#"
         global_string = "test"
         global_integer = 5
@@ -51,5 +53,11 @@ fn main() {
     "#;
 
     let decoded: Config = toml::from_str(toml_str).unwrap();
-    println!("{:#?}", decoded);
+    println!("Decode from string: {:#?}", decoded);
+
+    let mut reader = io::Cursor::new(toml_str);
+    let decoded: Config = toml::from_reader(&mut reader)?;
+    println!("Decode from reader: {:#?}", decoded);
+
+    Ok(())
 }

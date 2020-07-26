@@ -91,7 +91,7 @@ pub fn from_str<'de, T>(s: &'de str) -> Result<T, Error>
 /// extern crate serde_derive;
 /// extern crate toml;
 ///
-/// use std::fs::File;
+/// use std::io;
 ///
 /// #[derive(Debug, Deserialize)]
 /// struct Config {
@@ -104,23 +104,29 @@ pub fn from_str<'de, T>(s: &'de str) -> Result<T, Error>
 ///     name: String,
 /// }
 ///
-/// fn main() {
-/// # }
-/// # fn fake_main() {
-///     let mut file = File::open("config.toml").unwrap();
-///     let config: Config = toml::from_reader(&mut file).unwrap();
+/// fn main() -> Result<(), io::Error> {
+///     let toml_str = r#"
+///         title = 'TOML Example'
 ///
-///     println!("{:?}", config);
+///         [owner]
+///         name = 'Lisa'
+///     "#;
+///     let mut reader = io::Cursor::new(toml_str);
+///     let config: Config = toml::from_reader(&mut reader)?;
+///
+///     assert_eq!(config.title, "TOML Example");
+///     assert_eq!(config.owner.name, "Lisa");
+///     Ok(())
 /// }
 /// ```
-pub fn from_reader<R, T>(r: &mut R) -> Result<T, Error>
+pub fn from_reader<R, T>(r: &mut R) -> Result<T, io::Error>
 where
     R: io::Read,
     T: de::DeserializeOwned,
 {
     let mut buf = Vec::new();
     r.read_to_end(&mut buf)?;
-    from_slice(&buf)
+    from_slice(&buf).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))
 }
 
 /// Errors that can occur when deserializing a type.
