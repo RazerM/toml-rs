@@ -154,10 +154,7 @@ where
     W: io::Write,
     T: ser::Serialize,
 {
-    let b = match to_vec(value) {
-        Ok(b) => Ok(b),
-        Err(e) => Err(io::Error::new(io::ErrorKind::InvalidData, e)),
-    }?;
+    let b = to_vec(value).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
     writer.write_all(&b)
 }
 

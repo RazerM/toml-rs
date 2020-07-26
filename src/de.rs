@@ -126,10 +126,7 @@ where
 {
     let mut buf = Vec::new();
     r.read_to_end(&mut buf)?;
-    match from_slice(&buf) {
-        Ok(de) => Ok(de),
-        Err(e) => Err(io::Error::new(io::ErrorKind::InvalidData, e)),
-    }
+    from_slice(&buf).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))
 }
 
 /// Errors that can occur when deserializing a type.
